@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOOTPRINT.AI | Digital Fingerprint Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --glass: rgba(30, 41, 59, 0.5);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #020617;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #f8fafc;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .sidebar {
+            background-color: #0f172a;
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: var(--glass);
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .main-content {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 100%);
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .score-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 8px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem auto;
+            position: relative;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .skill-tag {
+            background: #1e293b;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            color: #cbd5e1;
+            transition: all 0.2s;
+        }
+
+        .skill-tag:hover {
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .chart-bar {
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
+        .chart-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            transition: width 1s ease-in-out;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-area {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        textarea {
+            background: #020617;
+            border: 1px solid var(--border);
+            color: #fff;
+            resize: none;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .loading-dots:after {
+            content: ' .';
+            animation: dots 1s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { color: rgba(0,0,0,0); text-shadow: .5em 0 0 rgba(0,0,0,0), 1em 0 0 rgba(0,0,0,0); }
+            40% { color: white; text-shadow: .5em 0 0 rgba(0,0,0,0), 1em 0 0 rgba(0,0,0,0); }
+            60% { text-shadow: .5em 0 0 white, 1em 0 0 rgba(0,0,0,0); }
+            80%, 100% { text-shadow: .5em 0 0 white, 1em 0 0 white; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">FOOTPRINT<span>.AI</span></div>
+            <nav id="sidebarNav" class="flex flex-col gap-2">
+                <div class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </div>
+                <div class="nav-item" data-section="analysis">
+                    <i class="fas fa-chart-line"></i> Profile Analysis
+                </div>
+                <div class="nav-item" data-section="skills">
+                    <i class="fas fa-bullseye"></i> Skill Gap
+                </div>
+                <div class="nav-item" data-section="career">
+                    <i class="fas fa-route"></i> Career Path
+                </div>
+                <div class="nav-item" data-section="recruiter">
+                    <i class="fas fa-id-card"></i> Recruiter View
+                </div>
+            </nav>
+            <div class="mt-auto">
+                <div class="card" style="padding: 1rem; background: rgba(56, 189, 248, 0.05);">
+                    <div style="font-size: 0.75rem; color: #94a3b8;">System Status</div>
+                    <div style="font-size: 0.875rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                        <div id="modelStatusDot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></div>
+                        <span id="modelStatusText">Online</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1 class="text-2xl font-extrabold text-white">Insight Engine</h1>
+                    <p class="text-slate-400 text-sm mt-1">AI-Powered Personal Brand & Career Strategy</p>
+                </div>
+                <div id="confidenceBadge" class="badge hidden">Confidence: 0%</div>
+            </header>
+
+            <!-- Input Section -->
+            <section class="animate-fade-in">
+                <div class="input-area">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Multi-Source Identity Input</h2>
+                        <div class="test-profiles flex gap-2">
+                            <span class="text-[10px] text-slate-500">Suggested:</span>
+                            <button onclick="fillSample('ai')" class="text-[10px] text-sky-400 hover:underline">AI Engineer</button>
+                            <button onclick="fillSample('sec')" class="text-[10px] text-rose-400 hover:underline">Security</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Resume / CV Content</label>
+                            <textarea id="resumeInput" rows="3" class="w-full rounded-lg p-3 text-xs" placeholder="Paste resume text..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">LinkedIn Summary / About</label>
+                            <textarea id="linkedinInput" rows="3" class="w-full rounded-lg p-3 text-xs" placeholder="LinkedIn bio..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">GitHub / Technical Bio</label>
+                            <textarea id="githubInput" rows="3" class="w-full rounded-lg p-3 text-xs" placeholder="GitHub profile text..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Social / Portfolio / Skills</label>
+                            <textarea id="portfolioInput" rows="3" class="w-full rounded-lg p-3 text-xs" placeholder="Portfolio description & skills..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+                        <p class="text-[10px] text-slate-500 max-w-md">Our neural engine consolidates signals from all provided sources to generate a unified identity analysis.</p>
+                        <button id="analyzeBtn" class="px-10 py-3 rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-sky-500/20">
+                            <i class="fas fa-microchip"></i> Analyze Digital Footprint
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden py-20 text-center animate-fade-in">
+                <div class="inline-block animate-spin h-8 w-8 border-4 border-sky-400 border-t-transparent rounded-full mb-4"></div>
+                <div class="text-white font-medium text-lg loading-dots">Neural network is analyzing signals</div>
+                <p class="text-slate-500 text-sm mt-2">Correlating career paths and technical depth...</p>
+            </div>
+
+            <!-- Results Dashboard -->
+            <div id="results" class="hidden flex flex-col gap-6 animate-fade-in">
+                
+                <!-- Main Analytics Section -->
+                <div id="view-analysis" class="nav-view grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-3 mb-2">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-chart-line text-sky-500"></i> Profile Intelligence Summary
+                        </h2>
+                    </div>
+                    <!-- Left: Brand Strength -->
+                    <div class="card">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 italic">Brand Strength</h3>
+                        <div class="score-circle">
+                            <canvas id="scoreChart" class="absolute inset-0"></canvas>
+                            <div class="relative z-10 flex flex-col items-center">
+                                <span id="mainScore" class="text-5xl font-black text-white">0</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Aggregate</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 space-y-4">
+                            <div>
+                                <div class="stat-row">
+                                    <span class="text-xs text-slate-300">Technical Depth</span>
+                                    <span id="techDepthLabel" class="text-xs font-bold text-sky-400">0/100</span>
+                                </div>
+                                <div class="chart-bar"><div id="techDepthBar" class="chart-fill" style="width: 0%"></div></div>
+                            </div>
+                            <div>
+                                <div class="stat-row">
+                                    <span class="text-xs text-slate-300">Career Fit</span>
+                                    <span id="careerFitLabel" class="text-xs font-bold text-sky-400">0/100</span>
+                                </div>
+                                <div class="chart-bar"><div id="careerFitBar" class="chart-fill" style="width: 0%"></div></div>
+                            </div>
+                            <div>
+                                <div class="stat-row">
+                                    <span class="text-xs text-slate-300">Market Reach</span>
+                                    <span id="marketReachLabel" class="text-xs font-bold text-sky-400">0/100</span>
+                                </div>
+                                <div class="chart-bar"><div id="marketReachBar" class="chart-fill" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto pt-8">
+                            <p id="technicalSummary" class="text-xs leading-relaxed text-slate-400 font-medium italic p-3 bg-slate-800/30 rounded-lg border-l-2 border-sky-500">
+                                "Analysis engine is gathering contextual data..."
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Middle: Role & Persona -->
+                    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Projected Role -->
+                        <div class="card bg-gradient-to-br from-slate-800/80 to-slate-900/40">
+                            <h3 class="text-sm font-bold text-slate-400 mb-4">Core Classification</h3>
+                            <div class="flex items-center gap-4">
+                                <div class="p-4 bg-sky-500/10 rounded-2xl border border-sky-500/20">
+                                    <i class="fas fa-mountain text-3xl text-sky-400"></i>
+                                </div>
+                                <div>
+                                    <h4 id="predictedRole" class="text-xl font-black text-white">...</h4>
+                                    <p class="text-xs text-sky-400/70 font-semibold uppercase">Inferred Path</p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex flex-wrap gap-2" id="keywordsList">
+                                <!-- Keywords -->
+                            </div>
+                        </div>
+
+                        <!-- Persona Match -->
+                        <div class="card">
+                            <h3 class="text-sm font-bold text-slate-400 mb-4">Identity Intelligence</h3>
+                            <div class="space-y-3">
+                                <div class="stat-row">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500">Startup Fit</span>
+                                    <span id="fitText" class="text-xs font-bold text-white">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500">Communication</span>
+                                    <span id="commText" class="text-xs font-bold text-white">--</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500">Tech Credibility</span>
+                                    <span id="credibilityText" class="text-xs font-bold text-sky-400">High</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 bg-slate-800/50 rounded border border-slate-700/50">
+                                <h4 class="text-[9px] uppercase font-bold text-slate-500 mb-1">Brand Quality</h4>
+                                <p id="brandText" class="text-[11px] text-slate-300 leading-tight">--</p>
+                            </div>
+                        </div>
+
+                        <!-- Brand Alignment Matrix -->
+                        <div class="card md:col-span-2 group">
+                            <h3 class="text-sm font-bold text-slate-400 mb-6">Market Alignment Matrix</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                        <span>AI/ML Readiness</span>
+                                        <span id="aiReadinessVal">0%</span>
+                                    </div>
+                                    <div class="chart-bar h-1.5"><div id="aiReadinessBar" class="chart-fill" style="width: 0%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                        <span>Startup Readiness</span>
+                                        <span id="startupReadyVal">0%</span>
+                                    </div>
+                                    <div class="chart-bar h-1.5"><div id="startupReadyBar" class="chart-fill bg-emerald-500" style="width: 0%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                        <span>Enterprise Ready</span>
+                                        <span id="mncReadyVal">0%</span>
+                                    </div>
+                                    <div class="chart-bar h-1.5"><div id="mncReadyBar" class="chart-fill bg-purple-500" style="width: 0%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recruiter Insights Section -->
+                <div id="view-recruiter" class="nav-view grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+                    <div class="lg:col-span-2 mb-2">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-id-card text-sky-500"></i> Recruiter Strategic View
+                        </h2>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-sm font-bold text-slate-400 mb-4">Strategic Recommendations</h3>
+                        <div id="recommendationsList" class="space-y-2">
+                            <!-- Recoms -->
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-sm font-bold text-slate-400 mb-4">Digital Identity Verdict</h3>
+                        <div class="p-4 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                            <p class="text-sm text-slate-300 leading-relaxed italic">
+                                "The candidate shows strong technical signals in backend infrastructures but highlights a slight misalignment in multi-cloud deployment strategies. Strategic focus on containerization would elevate the professional brand to tier-1 standards."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inference Explanation Row (XAI) -->
+                <div id="view-career" class="nav-view grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+                    <div class="lg:col-span-2 mb-2">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-route text-sky-500"></i> XAI: Career Path Reasoning
+                        </h2>
+                    </div>
+                    <!-- Probability Distribution -->
+                    <div class="card">
+                        <h3 class="text-sm font-bold text-slate-400 mb-6 flex items-center justify-between">
+                            <span>Confidence Distribution (XAI)</span>
+                            <i class="fas fa-project-diagram text-sky-400"></i>
+                        </h3>
+                        <div id="confidenceBars" class="space-y-4">
+                            <!-- Dynamic Bars -->
+                        </div>
+                    </div>
+                    
+                    <!-- Explainability Rationale -->
+                    <div class="card">
+                        <h3 class="text-sm font-bold text-slate-400 mb-6 flex items-center justify-between">
+                            <span>Inference Reasoning</span>
+                            <i class="fas fa-brain text-purple-400"></i>
+                        </h3>
+                        <div class="space-y-4">
+                            <p id="xaiReasoning" class="text-sm text-slate-300 font-medium bg-slate-800/20 p-4 rounded-xl border border-slate-700/50 italic">
+                                --
+                            </p>
+                            <div class="pt-2">
+                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest">Influential Signals</h4>
+                                <div id="xaiSignals" class="flex flex-wrap gap-2">
+                                    <!-- Dynamic chips -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Skill Gap & Insights -->
+                <div id="view-skills" class="nav-view grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-3 mb-2">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-bullseye text-sky-500"></i> Market Skills Gap
+                        </h2>
+                    </div>
+                    <div class="card lg:col-span-2">
+                        <h3 class="text-sm font-bold text-slate-400 mb-4">ATS & Market Depth Analysis</h3>
+                        <p id="atsInsights" class="text-sm text-slate-300 leading-relaxed">
+                            --
+                        </p>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-sm font-bold text-rose-400 mb-4">Critical Skill Gaps</h3>
+                        <div id="missingSkillsList" class="flex flex-wrap gap-2">
+                            <!-- Missing -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const results = document.getElementById('results');
+        const loading = document.getElementById('loading');
+        const sidebarNav = document.getElementById('sidebarNav');
+        let scoreChartInstance = null;
+
+        // Navigation Logic
+        sidebarNav.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Update Sidebar Active State
+                sidebarNav.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                // Update View Visibility
+                const section = item.getAttribute('data-section');
+                const views = document.querySelectorAll('.nav-view');
+                
+                if (section === 'dashboard') {
+                    views.forEach(v => v.classList.remove('hidden'));
+                } else {
+                    views.forEach(v => {
+                        if (v.id === `view-${section}`) {
+                            v.classList.remove('hidden');
+                        } else {
+                            v.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        });
+
+        // Check health on load
+        window.addEventListener('load', async () => {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                if (!data.model_loaded) {
+                    document.getElementById('modelStatusText').innerText = 'Model Pending';
+                    document.getElementById('modelStatusDot').style.backgroundColor = '#f59e0b';
+                }
+            } catch (e) {
+                document.getElementById('modelStatusText').innerText = 'Offline';
+                document.getElementById('modelStatusDot').style.backgroundColor = '#ef4444';
+            }
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            const payload = {
+                resume_text: document.getElementById('resumeInput').value,
+                linkedin_bio: document.getElementById('linkedinInput').value,
+                github_profile: document.getElementById('githubInput').value,
+                portfolio_content: document.getElementById('portfolioInput').value
+            };
+
+            if (!Object.values(payload).some(x => x)) {
+                alert("Please provide at least one source of profile data.");
+                return;
+            }
+
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            document.getElementById('confidenceBadge').classList.add('hidden');
+
+            try {
+                const formData = new FormData();
+                Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
+
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                // Reset view to Dashboard
+                document.querySelector('[data-section="dashboard"]').click();
+                
+                updateUI(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                loading.classList.add('hidden');
+            }
+        });
+
+        function fillSample(type) {
+            if (type === 'ai') {
+                document.getElementById('resumeInput').value = "Senior AI Engineer focused on LLMs and Generative models. Experience with PyTorch and LangChain.";
+                document.getElementById('githubInput').value = "Portfolio: Distributed training clusters, VectorDB optimizations.";
+            } else {
+                document.getElementById('resumeInput').value = "Cybersecurity Lead with 8 years in SecOps and Penetration Testing. Expert in Wireshark and Metasploit.";
+                document.getElementById('githubInput').value = "GitHub: Custom malware analysis tools and security scanners.";
+            }
+        }
+
+        function updateUI(data) {
+            results.classList.remove('hidden');
+            const analysis = data.analysis;
+            const pred = data.prediction || {};
+
+            // Confidence Badge
+            const badge = document.getElementById('confidenceBadge');
+            badge.innerText = `IDENTIFIED: ${data.role} (${(data.confidence * 100).toFixed(0)}%)`;
+            badge.classList.remove('hidden');
+
+            // Basic Info
+            document.getElementById('predictedRole').innerText = data.role;
+            
+            // Intelligence Scores
+            const scores = analysis.scores || {};
+            const totalScore = Math.round((scores.technical_depth + scores.communication_quality + scores.ai_readiness) / 3 || 0);
+            document.getElementById('mainScore').innerText = totalScore;
+            
+            // Skill Gaps & Bars
+            document.getElementById('techDepthLabel').innerText = `${scores.technical_depth || 0}/100`;
+            document.getElementById('techDepthBar').style.width = `${scores.technical_depth || 0}%`;
+            
+            document.getElementById('careerFitLabel').innerText = `${scores.startup_ready || 0}/100`;
+            document.getElementById('careerFitBar').style.width = `${scores.startup_ready || 0}%`;
+            
+            document.getElementById('marketReachLabel').innerText = `${scores.ai_readiness || 0}/100`;
+            document.getElementById('marketReachBar').style.width = `${scores.ai_readiness || 0}%`;
+
+            // Summaries
+            const brandSummary = analysis.brand_analysis || "Analysis summary available after processing.";
+            document.getElementById('technicalSummary').innerText = `"${brandSummary}"`;
+            document.getElementById('brandText').innerText = brandSummary;
+            
+            const depth = analysis.recruiter_view?.technical_depth || 'Moderate';
+            document.getElementById('credibilityText').innerText = depth;
+            document.getElementById('fitText').innerText = analysis.recruiter_view?.startup_fit || '--';
+            document.getElementById('commText').innerText = analysis.recruiter_view?.communication || '--';
+            document.getElementById('atsInsights').innerText = analysis.ats_insights || '--';
+
+            // Alignment Matrix
+            document.getElementById('aiReadinessVal').innerText = `${scores.ai_readiness || 0}%`;
+            document.getElementById('aiReadinessBar').style.width = `${scores.ai_readiness || 0}%`;
+            
+            document.getElementById('startupReadyVal').innerText = `${scores.startup_ready || 0}%`;
+            document.getElementById('startupReadyBar').style.width = `${scores.startup_ready || 0}%`;
+            
+            document.getElementById('mncReadyVal').innerText = `${scores.mnc_ready || 0}%`;
+            document.getElementById('mncReadyBar').style.width = `${scores.mnc_ready || 0}%`;
+
+            // Recommendations
+            const recommendationsList = document.getElementById('recommendationsList');
+            recommendationsList.innerHTML = (analysis.recommendations || []).map(r => `
+                <div class="flex items-start gap-3 p-3 bg-slate-800/40 rounded-lg text-xs text-slate-300">
+                    <i class="fas fa-check-circle text-sky-500 mt-0.5"></i>
+                    <span>${r}</span>
+                </div>
+            `).join('');
+
+            // Keywords / Signals
+            const keywordsList = document.getElementById('keywordsList');
+            keywordsList.innerHTML = (pred.top_signals || []).map(k => `
+                <span class="skill-tag">${k}</span>
+            `).join('');
+
+            // Critical Skill Gaps
+            const missingSkillsList = document.getElementById('missingSkillsList');
+            missingSkillsList.innerHTML = (analysis.skill_gaps || []).map(s => `
+                <span class="skill-tag" style="border-color: #f43f5e; color: #f43f5e;">${s}</span>
+            `).join('');
+
+            // XAI: Confidence Distribution
+            if (pred.predicted_roles) {
+                const confBars = document.getElementById('confidenceBars');
+                confBars.innerHTML = Object.entries(pred.predicted_roles)
+                    .map(([role, percent]) => {
+                        return `
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[11px] font-semibold text-slate-300 uppercase">${role}</span>
+                                    <span class="text-[11px] text-sky-400 font-bold">${percent}%</span>
+                                </div>
+                                <div class="chart-bar"><div class="chart-fill" style="width: ${percent}%"></div></div>
+                            </div>
+                        `;
+                    }).join('');
+            }
+
+            // XAI: Reasoning & Signals
+            if (pred.reasoning) {
+                const reasonEl = document.getElementById('xaiReasoning');
+                reasonEl.innerHTML = (pred.reasoning || []).map(r => `<div class="mb-2 last:mb-0"><i class="fas fa-arrow-right text-sky-500 mr-2 text-[10px]"></i> ${r}</div>`).join('');
+                
+                const sigs = document.getElementById('xaiSignals');
+                sigs.innerHTML = (pred.top_signals || []).map(sig => `
+                    <span class="px-2 py-1 bg-sky-500/10 border border-sky-500/20 text-[10px] text-sky-300 rounded font-bold uppercase">
+                        ${sig}
+                    </span>
+                `).join('');
+            }
+
+            // Chart
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            if (scoreChartInstance) scoreChartInstance.destroy();
+            scoreChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [totalScore, 100 - totalScore],
+                        backgroundColor: ['#38bdf8', '#1e293b'],
+                        borderWidth: 0,
+                        cutout: '88%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 2000, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

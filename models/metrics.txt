@@ -1,0 +1,38 @@
+Accuracy: 0.6926315789473684
+
+Classification Report:
+                                                                          precision    recall  f1-score   support
+
+                                                    adding beneficiaries       1.00      1.00      1.00         1
+                                                            and evaluate       1.00      1.00      1.00         1
+ and other beverage consumption to anticipate amounts to be purchased or       0.50      1.00      0.67         1
+                                        and related supplies such as ice       1.00      1.00      1.00         1
+        posting and reconciling large- volume batch summary transactions       1.00      1.00      1.00         1
+                                                                   water       0.00      0.00      0.00         1
+                                                              ACCOUNTANT       0.59      0.96      0.73        23
+                                                                ADVOCATE       0.81      0.74      0.77        23
+                                                             AGRICULTURE       1.00      0.23      0.38        13
+                                                                 APPAREL       0.75      0.47      0.58        19
+                                                                    ARTS       0.60      0.14      0.23        21
+                                                              AUTOMOBILE       0.50      0.14      0.22         7
+                                                                AVIATION       0.69      0.78      0.73        23
+                                                                 BANKING       0.75      0.65      0.70        23
+                                                                     BPO       0.00      0.00      0.00         4
+                                                    BUSINESS-DEVELOPMENT       0.57      0.67      0.62        24
+                                                                    CHEF       0.74      0.87      0.80        23
+                                                            CONSTRUCTION       0.86      0.82      0.84        22
+                                                              CONSULTANT       0.86      0.26      0.40        23
+                                                                DESIGNER       0.71      0.95      0.82        21
+                                                           DIGITAL-MEDIA       0.67      0.63      0.65        19
+                                                             ENGINEERING       0.78      0.78      0.78        23
+                                                                 FINANCE       0.64      0.70      0.67        23
+                                                                 FITNESS       0.83      0.87      0.85        23
+                                                              HEALTHCARE       0.65      0.74      0.69        23
+                                                  INFORMATION-TECHNOLOGY       0.61      0.92      0.73        24
+                                                        PUBLIC-RELATIONS       0.69      0.82      0.75        22
+                                                                   SALES       0.56      0.65      0.60        23
+                                                                 TEACHER       0.67      0.90      0.77        20
+
+                                                                accuracy                           0.69       475
+                                                               macro avg       0.69      0.68      0.65       475
+                                                            weighted avg       0.70      0.69      0.67       475
